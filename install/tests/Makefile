@@ -29,6 +29,14 @@ gke-standard-cluster:
 	terraform apply -target=module.gke -var kubeconfig=${KUBECONFIG} --auto-approve
 
 .PHONY:
+## aks-standard-cluster: Creates an AKS cluster
+aks-standard-cluster:
+	terraform init --upgrade && \
+	terraform workspace new $(TF_VAR_TEST_ID) || terraform workspace select $(TF_VAR_TEST_ID) && \
+	terraform apply -target=module.aks \
+	-var kubeconfig=${KUBECONFIG} --auto-approve
+
+.PHONY:
 ## k3s-standard-cluster: Creates a K3S cluster on GCP with one master and 1 worker node
 k3s-standard-cluster:
 	terraform init --upgrade && \
@@ -97,6 +105,7 @@ cleanup:
 	which ${KUBECONFIG} && terraform destroy -target=module.externaldns -var kubeconfig=${KUBECONFIG} --auto-approve || echo "No kubeconfig file"
 	which ${KUBECONFIG} && terraform destroy -target=module.certmanager -var kubeconfig=${KUBECONFIG} --auto-approve || echo "No kubeconfig file"
 	terraform destroy -target=module.gke -var kubeconfig=${KUBECONFIG} --auto-approve
+	terraform destroy -target=module.aks -var kubeconfig=${KUBECONFIG} --auto-approve
 	terraform destroy -target=module.k3s -var kubeconfig=${KUBECONFIG} --auto-approve
 
 get-results:
