@@ -13,20 +13,9 @@ provider "google" {
   zone    = var.gcp_zone
 }
 
-resource "random_id" "id" {
-  byte_length = 4
-}
-
 provider "helm" {
   kubernetes {
     config_path = var.kubeconfig
-  }
-}
-
-#create namespace for cert mananger
-resource "kubernetes_namespace" "cert" {
-  metadata {
-    name = "cert-manager"
   }
 }
 
@@ -34,39 +23,6 @@ resource "kubernetes_namespace" "cert" {
 resource "kubernetes_namespace" "external_dns" {
   metadata {
     name = "external-dns"
-  }
-}
-
-
-variable "extraArgs" {
-  description = "List of additional arguments for cert-manager"
-  type        = list(any)
-  default = [
-    "--dns01-recursive-nameservers-only",
-    "--dns01-recursive-nameservers=8.8.8.8:53\\,1.1.1.1:53",
-  ]
-}
-
-
-#deploy cert manager
-resource "helm_release" "cert" {
-  name       = "cert-manager"
-  namespace  = kubernetes_namespace.cert.metadata[0].name
-  repository = "https://charts.jetstack.io"
-  chart      = "cert-manager"
-  depends_on = [kubernetes_namespace.cert]
-  set {
-    name  = "version"
-    value = "v1.8.0"
-  }
-  set {
-    name  = "installCRDs"
-    value = "true"
-  }
-
-  set {
-    name  = "extraArgs"
-    value = "{${join(",", var.extraArgs)}}"
   }
 }
 
@@ -114,18 +70,5 @@ resource "helm_release" "external-dns" {
   set {
     name = "policy"
     value = "sync"
-  }
-}
-
-resource "kubernetes_secret" "dns_solver" {
-  depends_on = [
-    helm_release.cert,
-  ]
-  metadata {
-    name      = "clouddns-dns01-solver"
-    namespace = "cert-manager"
-  }
-  data = {
-    "keys.json" = "${data.local_file.gcp_credentials.content}"
   }
 }

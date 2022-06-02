@@ -4,7 +4,6 @@ metadata:
   name: gitpod-issuer
 spec:
   acme:
-    email: nandaja.varma@gmail.com
     server: https://acme-v02.api.letsencrypt.org/directory
     privateKeySecretRef:
       name: issuer-account-key

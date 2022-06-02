@@ -26,26 +26,29 @@ help: Makefile
 gke-standard-cluster:
 	terraform init --upgrade && \
 	terraform workspace new $(TF_VAR_TEST_ID) || terraform workspace select $(TF_VAR_TEST_ID) && \
-	terraform apply -target=module.gke \
-	-var kubeconfig=${KUBECONFIG} --auto-approve
+	terraform apply -target=module.gke -var kubeconfig=${KUBECONFIG} --auto-approve
 
 .PHONY:
 ## k3s-standard-cluster: Creates a K3S cluster on GCP with one master and 1 worker node
 k3s-standard-cluster:
 	terraform init --upgrade && \
 	terraform workspace new $(TF_VAR_TEST_ID) || terraform workspace select $(TF_VAR_TEST_ID) && \
-	terraform apply -target=module.k3s \
-	-var kubeconfig=${KUBECONFIG} --auto-approve
-
+	terraform apply -target=module.k3s -var kubeconfig=${KUBECONFIG} --auto-approve
 
 CLUSTER_ISSUER_CLOUD_DNS := "./manifests/gcp-issuer.yaml"
 
 .PHONY:
-## managed-dns-with-cert-manager: Installs cert-manager, external-dns, and setup up CloudDNS
-managed-dns-with-cert-manager: check-env-sub-domain
+## cert-manager: Installs cert-manager, optionally create secret for cloud-dns access
+cert-manager:
 	terraform workspace select $(TF_VAR_TEST_ID) && \
-	terraform apply -target=module.tools -var kubeconfig=${KUBECONFIG} --auto-approve && \
+	terraform apply -target=module.certmanager -var kubeconfig=${KUBECONFIG} --auto-approve && \
 	kubectl --kubeconfig=${KUBECONFIG} apply -f ${CLUSTER_ISSUER_CLOUD_DNS}
+
+.PHONY:
+## managed-dns: Installs external-dns, and setup up CloudDNS access
+managed-dns: check-env-sub-domain
+	terraform workspace select $(TF_VAR_TEST_ID) && \
+	terraform apply -target=module.externaldns -var kubeconfig=${KUBECONFIG} --auto-approve
 
 .PHONY:
 ## get-kubeconfig: Returns KUBECONFIG of a just created cluster
@@ -91,7 +94,8 @@ run-tests:
 
 cleanup:
 	terraform workspace select $(TF_VAR_TEST_ID)
-	which ${KUBECONFIG} && terraform destroy -target=module.tools -var kubeconfig=${KUBECONFIG} --auto-approve || echo "No kubeconfig file"
+	which ${KUBECONFIG} && terraform destroy -target=module.externaldns -var kubeconfig=${KUBECONFIG} --auto-approve || echo "No kubeconfig file"
+	which ${KUBECONFIG} && terraform destroy -target=module.certmanager -var kubeconfig=${KUBECONFIG} --auto-approve || echo "No kubeconfig file"
 	terraform destroy -target=module.gke -var kubeconfig=${KUBECONFIG} --auto-approve
 	terraform destroy -target=module.k3s -var kubeconfig=${KUBECONFIG} --auto-approve
 

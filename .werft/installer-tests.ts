@@ -31,10 +31,15 @@ const INFRA_PHASES: { [name: string]: InfraConfig } = {
         makeTarget: "k3s-standard-cluster",
         description: "Creating a k3s cluster on GCP with 1 node",
     },
+    CERT_MANAGER: {
+        phase: "setup-cert-manager",
+        makeTarget: "cert-manager",
+        description: "Sets up cert-manager and optional cloud dns secret",
+    },
     GCP_MANAGED_DNS: {
-        phase: "setup-cert-manager-with-cloud-dns",
-        makeTarget: "managed-dns-with-cert-manager",
-        description: "Sets up cert-manager, external-dns & cloudDNS config",
+        phase: "setup-external-dns-with-cloud-dns",
+        makeTarget: "managed-dns",
+        description: "Sets up external-dns & cloudDNS config",
     },
     INSTALL_GITPOD_IGNORE_PREFLIGHTS: {
         phase: "install-gitpod-without-preflights",
@@ -81,6 +86,7 @@ const TEST_CONFIGURATIONS: { [name: string]: TestConfig } = {
         DESCRIPTION: "Deploy Gitpod on GKE, with managed DNS, and run integration tests",
         PHASES: [
             "STANDARD_GKE_CLUSTER",
+            "CERT_MANAGER",
             "GCP_MANAGED_DNS",
             "INSTALL_GITPOD",
             "CHECK_INSTALLATION",
@@ -95,7 +101,7 @@ const TEST_CONFIGURATIONS: { [name: string]: TestConfig } = {
             " with managed DNS and run integrations tests",
         PHASES: [
             "STANDARD_K3S_CLUSTER_ON_GCP",
-            "GCP_MANAGED_DNS",
+            "CERT_MANAGER",
             "INSTALL_GITPOD_IGNORE_PREFLIGHTS",
             "CHECK_INSTALLATION",
             "RUN_INTEGRATION_TESTS",

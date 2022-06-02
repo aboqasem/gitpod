@@ -21,6 +21,11 @@ provider "google" {
   zone        = var.gcp_zone
 }
 
+provider "google" {
+  alias       = "dns"
+  credentials = var.dns_sa_creds
+}
+
 resource "google_service_account" "gcp_instance" {
   account_id   = "gcp-k3s-compute"
   display_name = "Service Account"
@@ -35,6 +40,30 @@ resource "local_file" "ssh_private_key_pem" {
   content         = tls_private_key.ssh.private_key_pem
   filename        = ".ssh/google_compute_engine"
   file_permission = "0600"
+}
+
+resource "google_compute_firewall" "k3s-firewall" {
+  name    = "firewall-${var.name}"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["6443"]
+  }
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80"]
+  }
+
+  allow {
+    protocol = "tcp"
+    ports    = ["443"]
+  }
+
+  target_tags = ["k3s"]
+
+  source_ranges = ["0.0.0.0/0"]
 }
 
 resource "google_compute_instance" "k3s_master_instance" {
@@ -94,23 +123,58 @@ resource "null_resource" "k3sup_install" {
   }
 }
 
+resource "google_dns_record_set" "gitpod-dns" {
+  provider     = google.dns
+  count        = (var.domain_name == null) || (var.managed_dns_zone == null ) ? 0 : 1
+  name         = "${var.domain_name}."
+  managed_zone = var.managed_dns_zone
+  project      = var.dns_project == null ? var.gcp_project : var.dns_project
+  type         = "A"
+  ttl          = 5
+
+  rrdatas = [google_compute_instance.k3s_master_instance.network_interface[0].access_config[0].nat_ip]
+}
+
+resource "google_dns_record_set" "gitpod-dns-1" {
+  provider     = google.dns
+  count        = (var.domain_name == null) || (var.managed_dns_zone == null ) ? 0 : 1
+  name         = "ws.${var.domain_name}."
+  managed_zone = var.managed_dns_zone
+  project      = var.dns_project == null ? var.gcp_project : var.dns_project
+  type         = "A"
+  ttl          = 5
+
+  rrdatas = [google_compute_instance.k3s_master_instance.network_interface[0].access_config[0].nat_ip]
+}
+
+resource "google_dns_record_set" "gitpod-dns-2" {
+  provider     = google.dns
+  count        = (var.domain_name == null) || (var.managed_dns_zone == null ) ? 0 : 1
+  name         = "*.${var.domain_name}."
+  managed_zone = var.managed_dns_zone
+  project      = var.dns_project == null ? var.gcp_project : var.dns_project
+  type         = "A"
+  ttl          = 5
+
+  rrdatas = [google_compute_instance.k3s_master_instance.network_interface[0].access_config[0].nat_ip]
+}
+
+resource "google_dns_record_set" "gitpod-dns-3" {
+  provider     = google.dns
+  count        = (var.domain_name == null) || (var.managed_dns_zone == null ) ? 0 : 1
+  name         = "*.ws.${var.domain_name}."
+  managed_zone = var.managed_dns_zone
+  project      = var.dns_project == null ? var.gcp_project : var.dns_project
+  type         = "A"
+  ttl          = 5
+
+  rrdatas = [google_compute_instance.k3s_master_instance.network_interface[0].access_config[0].nat_ip]
+}
+
+
 data "local_file" "kubeconfig" {
   depends_on = [null_resource.k3sup_install]
   filename   = var.kubeconfig
-}
-
-resource "google_compute_firewall" "k3s-firewall" {
-  name    = "firewall-${var.name}"
-  network = "default"
-
-  allow {
-    protocol = "tcp"
-    ports    = ["6443"]
-  }
-
-  target_tags = ["k3s"]
-
-  source_ranges = ["0.0.0.0/0"]
 }
 
 output "kubernetes_endpoint" {

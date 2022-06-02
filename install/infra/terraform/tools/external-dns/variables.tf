@@ -18,10 +18,6 @@ variable "gcp_zone" {
     default = "europe-west1-b"
 }
 
-variable "gcp_sub_domain" {
-    description = "Sub domain under `gitpod-self-hosted.com` to be created"
-}
-
 variable "credentials" {
     description = "Path to the JSON file storing Google service account credentials"
 }

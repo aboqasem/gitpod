@@ -16,7 +16,8 @@ terraform {
 }
 
 module "gke" {
-  source = "github.com/gitpod-io/gitpod//install/infra/terraform/gke?ref=nvn-infra-tf" # we can later use tags here
+  # source = "github.com/gitpod-io/gitpod//install/infra/terraform/gke?ref=main" # we can later use tags here
+  source = "../infra/terraform/gke" # we can later use tags here
 
   name        = var.TEST_ID
   project     = var.project
@@ -25,19 +26,31 @@ module "gke" {
 }
 
 module "k3s" {
-  source = "github.com/gitpod-io/gitpod//install/infra/terraform/k3s?ref=nvn-infra-tf" # we can later use tags here
+  # source = "github.com/gitpod-io/gitpod//install/infra/terraform/k3s?ref=main" # we can later use tags here
+  source = "../infra/terraform/k3s" # we can later use tags here
 
-  name        = var.TEST_ID
-  gcp_project = var.project
-  credentials = var.sa_creds
-  kubeconfig  = var.kubeconfig
+  name             = var.TEST_ID
+  gcp_project      = var.project
+  credentials      = var.sa_creds
+  kubeconfig       = var.kubeconfig
+  dns_sa_creds     = var.dns_sa_creds
+  dns_project      = "dns-for-playgrounds"
+  managed_dns_zone = "gitpod-self-hosted-com"
+  domain_name      = "${var.TEST_ID}.gitpod-self-hosted.com"
 }
 
-// this module is intended to be run separately from the above two. so a separate target for apply is necessary
-module "tools" {
-  source = "github.com/gitpod-io/gitpod//install/infra/terraform/tools/cm-cloud-dns?ref=nvn-infra-tf" # we can later use tags here
+module "certmanager" {
+  # source = "github.com/gitpod-io/gitpod//install/infra/terraform/tools/cert-manager?ref=main"
+  source = "../infra/terraform/tools/cert-manager"
 
   kubeconfig     = var.kubeconfig
   credentials    = var.dns_sa_creds
-  gcp_sub_domain = var.TEST_ID
+}
+
+module "externaldns" {
+  # source = "github.com/gitpod-io/gitpod//install/infra/terraform/tools/external-dns?ref=main"
+  source = "../infra/terraform/tools/external-dns"
+
+  kubeconfig     = var.kubeconfig
+  credentials    = var.dns_sa_creds
 }
