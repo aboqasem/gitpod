@@ -1425,11 +1425,11 @@ type WorkspaceTimeoutDuration string
 
 const (
 	// WorkspaceTimeoutDuration30m sets "30m" as timeout duration
-	WorkspaceTimeoutDuration30m = "30m"
+	WorkspaceTimeoutDuration30m WorkspaceTimeoutDuration = "30m"
 	// WorkspaceTimeoutDuration60m sets "60m" as timeout duration
-	WorkspaceTimeoutDuration60m = "60m"
+	WorkspaceTimeoutDuration60m WorkspaceTimeoutDuration = "60m"
 	// WorkspaceTimeoutDuration180m sets "180m" as timeout duration
-	WorkspaceTimeoutDuration180m = "180m"
+	WorkspaceTimeoutDuration180m WorkspaceTimeoutDuration = "180m"
 )
 
 // UserInfo is the UserInfo message type
