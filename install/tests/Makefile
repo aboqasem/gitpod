@@ -92,6 +92,10 @@ check-gitpod-installation: delete-cm-setup check-kots-app check-env-sub-domain
 run-tests:
 	./tests.sh ${KUBECONFIG}
 
+kots-uprgade:
+	@echo "Upgrade gitpod KOTS app to latest"
+	kubectl kots upstream upgrade --kubeconfig=${KUBECONFIG} gitpod -n gitpod --deploy
+
 cleanup:
 	terraform workspace select $(TF_VAR_TEST_ID)
 	which ${KUBECONFIG} && terraform destroy -target=module.externaldns -var kubeconfig=${KUBECONFIG} --auto-approve || echo "No kubeconfig file"

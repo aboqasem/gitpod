@@ -5,6 +5,8 @@ import { Werft } from "./util/werft";
 const testConfig: string = process.argv.length > 2 ? process.argv[2] : "STANDARD_K3S_TEST";
 // we can provide the version of the gitpod to install (eg: 2022.4.2)
 const version: string = process.argv.length > 3 ? process.argv[3] : "";
+// we are assuming that if a version is provided, this is to test upgrade to the latest
+const channel: string = version != "" ? "beta" : "unstable";
 
 const makefilePath: string = join("install/tests");
 
@@ -43,12 +45,12 @@ const INFRA_PHASES: { [name: string]: InfraConfig } = {
     },
     INSTALL_GITPOD_IGNORE_PREFLIGHTS: {
         phase: "install-gitpod-without-preflights",
-        makeTarget: `kots-install channel=unstable version=${version} preflights=false`, // this is a bit of a hack, for now we pass params like this
+        makeTarget: `kots-install channel=${channel} version=${version} preflights=false`, // this is a bit of a hack, for now we pass params like this
         description: "Install gitpod using kots community edition without preflights",
     },
     INSTALL_GITPOD: {
         phase: "install-gitpod",
-        makeTarget: `kots-install channel=unstable version=${version} preflights=true`,
+        makeTarget: `kots-install channel=${channel} version=${version} preflights=true`,
         description: "Install gitpod using kots community edition",
     },
     CHECK_INSTALLATION: {
@@ -56,6 +58,11 @@ const INFRA_PHASES: { [name: string]: InfraConfig } = {
         phase: "check-gitpod-installation",
         makeTarget: "check-gitpod-installation",
         description: "Check gitpod installation",
+    },
+    KOTS_UPGRADE: {
+        phase: "kots-upgrade",
+        makeTarget: "kots-uprgade",
+        description: "Upgrade Gitpod installation to latest version using KOTS CLI",
     },
     RUN_INTEGRATION_TESTS: {
         phase: "run-integration-tests",
@@ -92,6 +99,19 @@ const TEST_CONFIGURATIONS: { [name: string]: TestConfig } = {
             "CHECK_INSTALLATION",
             "RUN_INTEGRATION_TESTS",
             "RESULTS",
+            "DESTROY",
+        ],
+    },
+    STANDARD_GKE_UPGRADE_TEST: {
+        DESCRIPTION: `Deploy Gitpod on GKE, and test upgrade from ${version} to latest version`,
+        PHASES: [
+            "STANDARD_GKE_CLUSTER",
+            "CERT_MANAGER",
+            "GCP_MANAGED_DNS",
+            "INSTALL_GITPOD",
+            "CHECK_INSTALLATION",
+            "KOTS_UPGRADE",
+            "CHECK_INSTALLATION",
             "DESTROY",
         ],
     },

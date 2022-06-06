@@ -48,7 +48,7 @@ resource "google_container_cluster" "gitpod-cluster" {
     resource_limits {
       resource_type = "cpu"
       minimum       = 2
-      maximum       = 8
+      maximum       = 16
     }
 
     resource_limits {
@@ -58,7 +58,7 @@ resource "google_container_cluster" "gitpod-cluster" {
     }
   }
 
-  node_version = var.kubernetes_version
+  min_master_version = var.kubernetes_version
   # the default nodepool is used as the services nodepool
   remove_default_node_pool = false
   node_config {
