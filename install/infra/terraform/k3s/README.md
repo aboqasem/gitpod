@@ -1,4 +1,4 @@
-# k3s terraform module 
+# k3s terraform module
 
 This is a terraform module currently used in the automated installation tests
 for Gitpod. At successful completion, this module creates the following:
@@ -51,17 +51,12 @@ Get the credentials of the SA in `JSON` format and export as a variable as folow
 ``` sh
 export GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials
 ```
-
-Update the `tfvars` file by the name `variables.auto.tfvars` in this
-directory with the values you want, and then run:
-
 ```sh
 terraform init --upgrade
-terraform apply
+terraform apply # provide the values that are prompted for
 ```
 
-You will find the `kubeconfig` populated to the path you specified in
-the `variables.auto.tfvars` file.
+You will find the `kubeconfig` populated to the path you specified or `./kubeconfig` by default.
 
 ## Cleanup
 

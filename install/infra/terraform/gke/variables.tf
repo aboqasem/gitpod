@@ -12,25 +12,24 @@ variable "kubeconfig" {
 variable "region" {
   type        = string
   description = "The region to create the cluster."
-  default     = "europe-west1"
 }
 
 variable "zone" {
   type        = string
-  description = "The zone to create the cluster."
-  default     = "b"
+  description = "The zone to create the cluster in. Eg: `europs-west1-b`. If not specified, A regional cluster(high-availability) will be created."
+  default     = null
 }
 
 variable "kubernetes_version" {
   type        = string
   description = "Kubernetes version to be setup"
-  default     = "1.21.11-gke.1100"
+  default     = "1.22.8-gke.201"
 }
 
 variable "name" {
   type        = string
   description = "The name of the cluster."
-  default     = "sh-test"
+  default     = "gitpod"
 }
 
 variable "workspaces_machine_type" {
@@ -45,15 +44,9 @@ variable "services_machine_type" {
   default     = "n2-standard-4"
 }
 
-variable "min_count" {
-  type        = number
-  description = "Minimum number of nodes in the NodePool. Must be >=0 and <= max_node_count."
-  default     = 1
-}
-
 variable "max_count" {
   type        = number
-  description = "Maximum number of nodes in the NodePool. Must be >= min_node_count."
+  description = "Maximum number of nodes in the NodePool. Must be >= 1."
   default     = 50
 }
 
@@ -61,18 +54,6 @@ variable "disk_size_gb" {
   type        = number
   description = "Size of the node's disk."
   default     = 100
-}
-
-variable "initial_node_count" {
-  type        = number
-  description = "The number of nodes to create in this cluster's default node pool."
-  default     = 1
-}
-
-variable "pre-emptible" {
-  type        = bool
-  description = "Set if the nodes are to be pre-emptible"
-  default     = false
 }
 
 variable "credentials" {
