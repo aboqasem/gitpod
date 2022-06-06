@@ -7,6 +7,7 @@ package controller
 import (
 	"context"
 	"github.com/gitpod-io/gitpod/usage/pkg/db"
+	"github.com/gitpod-io/gitpod/usage/pkg/db/dbtest"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -15,14 +16,14 @@ import (
 
 func TestUsageReconciler_Reconcile(t *testing.T) {
 	conn := db.ConnectForTests(t)
-	workspaceID := "gitpodio-gitpod-gyjr82jkfnd"
 	instanceStatus := []byte(`{"phase": "stopped", "conditions": {"deployed": false, "pullingImages": false, "serviceExists": false}}`)
 	startOfMay := time.Date(2022, 05, 1, 0, 00, 00, 00, time.UTC)
 	startOfJune := time.Date(2022, 06, 1, 0, 00, 00, 00, time.UTC)
+	workspace := dbtest.NewWorkspace(t, "gitpodio-gitpod-gyjr82jkfnd")
 	instances := []db.WorkspaceInstance{
 		{
 			ID:           uuid.New(),
-			WorkspaceID:  workspaceID,
+			WorkspaceID:  workspace.ID,
 			CreationTime: db.NewVarcharTime(time.Date(2022, 05, 1, 00, 00, 00, 00, time.UTC)),
 			StoppedTime:  db.NewVarcharTime(time.Date(2022, 06, 1, 1, 0, 0, 0, time.UTC)),
 			Status:       instanceStatus,
@@ -30,13 +31,16 @@ func TestUsageReconciler_Reconcile(t *testing.T) {
 		// No creation time, invalid record
 		{
 			ID:          uuid.New(),
-			WorkspaceID: workspaceID,
+			WorkspaceID: workspace.ID,
 			StoppedTime: db.NewVarcharTime(time.Date(2022, 06, 1, 1, 0, 0, 0, time.UTC)),
 			Status:      instanceStatus,
 		},
 	}
 
 	tx := conn.Create(instances)
+	require.NoError(t, tx.Error)
+
+	tx = conn.Create(&workspace)
 	require.NoError(t, tx.Error)
 
 	reconciler := NewUsageReconciler(conn)
@@ -48,5 +52,6 @@ func TestUsageReconciler_Reconcile(t *testing.T) {
 		EndTime:                   startOfJune,
 		WorkspaceInstances:        1,
 		InvalidWorkspaceInstances: 1,
+		Workspaces:                1,
 	}, status)
 }
