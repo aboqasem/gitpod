@@ -50,7 +50,7 @@ pod:
     runAsUser: 0
   containers:
   - name: nightly-test
-    image: eu.gcr.io/gitpod-core-dev/dev/dev-environment:me-me-image.1
+    image: eu.gcr.io/gitpod-core-dev/dev/dev-environment:af-add-gh-cli-to-dev-image.0
     workingDir: /workspace
     imagePullPolicy: Always
     volumeMounts:
@@ -59,6 +59,9 @@ pod:
     - name: sh-playground-dns-perm # this sa is used for the DNS management
       mountPath: /mnt/secrets/sh-playground-dns-perm
     env:
+    - name: config
+      mountPath: /config
+      readOnly: false
     - name: WERFT_HOST
       value: "werft.werft.svc.cluster.local:7777"
     - name: GOOGLE_APPLICATION_CREDENTIALS
@@ -84,6 +87,7 @@ pod:
 
         sudo chown -R gitpod:gitpod /workspace
         sudo apt update && apt install gettext-base
+        export WERFT_CREDENTIAL_HELPER=/workspace/dev/preview/werft-credential-helper.sh
 
         export TF_VAR_TEST_ID=$(echo $RANDOM | md5sum | head -c 5; echo)
 
