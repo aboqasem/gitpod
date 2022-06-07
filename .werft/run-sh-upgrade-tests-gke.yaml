@@ -5,24 +5,49 @@ args:
   required: true
 pod:
   serviceAccount: werft
-  affinity:
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-      - matchExpressions:
-        - key: dev/workload
-          operator: In
-          values:
-          - "builds"
-  securityContext:
-    runAsUser: 0
+  nodeSelector:
+    dev/workload: builds
+  imagePullSecrets:
+  - name: eu-gcr-io-pull-secret
   volumes:
+  - name: gcp-sa
+    secret:
+      secretName: gcp-sa-gitpod-dev-deployer
+  - name: config
+    emptyDir: {}
   - name: sh-playground-sa-perm
     secret:
       secretName: sh-playground-sa-perm
   - name: sh-playground-dns-perm
     secret:
       secretName: sh-playground-dns-perm
+  initContainers:
+  - name: gcloud
+    image: eu.gcr.io/gitpod-core-dev/dev/dev-environment:af-add-gh-cli-to-dev-image.0
+    workingDir: /workspace
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+    - name: gcp-sa
+      mountPath: /mnt/secrets/gcp-sa
+      readOnly: true
+    - name: config
+      mountPath: /config
+      readOnly: false
+    command:
+    - bash
+    - -c
+    - |
+
+      echo "[prep] preparing config."
+
+      gcloud auth activate-service-account --key-file /mnt/secrets/gcp-sa/service-account.json
+      cp -R /home/gitpod/.config/gcloud /config/gcloud
+      cp /home/gitpod/.kube/config /config/kubeconfig
+
+      echo "[prep] copied config..."
+
+  securityContext:
+    runAsUser: 0
   containers:
   - name: nightly-test
     image: eu.gcr.io/gitpod-core-dev/dev/dev-environment:me-me-image.1
