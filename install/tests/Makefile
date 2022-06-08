@@ -59,6 +59,7 @@ KOTS_KONFIG := "./manifests/kots-config.yaml"
 license_community_beta := "../licenses/Community (Beta).yaml"
 license_community_stable := "../licenses/Community.yaml"
 license_community_unstable := "../licenses/Community (Unstable).yaml"
+license_community_dev-nan := "../licenses/nan.yaml"
 
 install-kots-cli:
 	curl https://kots.io/install | bash
@@ -100,13 +101,13 @@ cleanup:
 	terraform destroy -target=module.k3s -var kubeconfig=${KUBECONFIG} --auto-approve
 
 get-results:
-	@echo "If you have gotten this far, it means your setup succeeded"
-	@echo
-	@echo "URL of your setup is: "https://$(TF_VAR_TEST_ID).gitpod-self-hosted.com""
-	@echo
-	@echo "Following is the KUBECONFIG you can use to connect to the cluster:"
-	@echo
-	@cat ${KUBECONFIG}
+	echo "If you have gotten this far, it means your setup succeeded"
+	echo
+	echo "URL of your setup is: "https://$(TF_VAR_TEST_ID).gitpod-self-hosted.com""
+	echo
+	echo "Following is the KUBECONFIG you can use to connect to the cluster:"
+	echo
+	cat ${KUBECONFIG}
 
 list-state:
 	terraform state list
