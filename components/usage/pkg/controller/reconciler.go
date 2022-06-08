@@ -82,7 +82,37 @@ func (u *UsageReconciler) ReconcileTimeRange(ctx context.Context, from, to time.
 	}
 	status.Workspaces = len(workspaces)
 
+	// find owners of these workspaces
+	var ownerIDs []uuid.UUID
+	for _, workspace := range workspaces {
+		ownerIDs = append(ownerIDs, workspace.Workspace.OwnerID)
+	}
+
+	memberships, err := db.ListTeamMembershipsForUserIDs(ctx, u.conn, ownerIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list team memberships: %w", err)
+	}
+
+	membershipsByUserID := map[uuid.UUID]db.TeamMembership{}
+	for _, membership := range memberships {
+		membershipsByUserID[membership.UserID] = membership
+	}
+
+	workspacesByOwnerID := map[uuid.UUID]workspaceWithInstances{}
+	for _, workspace := range workspaces {
+		workspacesByOwnerID[workspace.Workspace.OwnerID] = workspace
+	}
+
+	for workspaceID, workspace := range workspaces {
+
+	}
+
 	return status, nil
+}
+
+type teamWithWorkspaces struct {
+	Team      db.Team
+	Workspace []workspaceWithInstances
 }
 
 type workspaceWithInstances struct {
