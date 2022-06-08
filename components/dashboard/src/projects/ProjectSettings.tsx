@@ -53,6 +53,7 @@ export default function () {
 
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [isIncrementalPrebuildsEnabled, setIsIncrementalPrebuildsEnabled] = useState<boolean>(false);
+    const [isPersistentVolumeClaimEnabled, setIsPersistentVolumeClaimEnabled] = useState<boolean>(false);
 
     useEffect(() => {
         if (!project) {
@@ -60,6 +61,7 @@ export default function () {
         }
         setIsLoading(false);
         setIsIncrementalPrebuildsEnabled(!!project.settings?.useIncrementalPrebuilds);
+        setIsPersistentVolumeClaimEnabled(!!project.settings?.usePersistentVolumeClaim);
     }, [project]);
 
     const toggleIncrementalPrebuilds = async () => {
@@ -75,6 +77,24 @@ export default function () {
                 },
             });
             setIsIncrementalPrebuildsEnabled(!isIncrementalPrebuildsEnabled);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const togglePersistentVolumeClaim = async () => {
+        if (!project) {
+            return;
+        }
+        setIsLoading(true);
+        try {
+            await getGitpodService().server.updateProjectPartial({
+                id: project.id,
+                settings: {
+                    usePersistentVolumeClaim: !isPersistentVolumeClaimEnabled,
+                },
+            });
+            setIsPersistentVolumeClaimEnabled(!isPersistentVolumeClaimEnabled);
         } finally {
             setIsLoading(false);
         }
@@ -105,6 +125,22 @@ export default function () {
                 checked={isIncrementalPrebuildsEnabled}
                 disabled={isLoading}
                 onChange={toggleIncrementalPrebuilds}
+            />
+            <br></br>
+            <h3>Persistent Volume Claim</h3>
+            <CheckBox
+                title={
+                    <span>
+                        Enable Persistent Volume Claim{" "}
+                        <PillLabel type="warn" className="font-semibold mt-2 ml-2 py-0.5 px-2 self-center">
+                            Experimental
+                        </PillLabel>
+                    </span>
+                }
+                desc={<span>Do not enable! Experimental feature that is still under development. </span>}
+                checked={isPersistentVolumeClaimEnabled}
+                disabled={isLoading}
+                onChange={togglePersistentVolumeClaim}
             />
         </ProjectSettingsPage>
     );
