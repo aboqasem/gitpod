@@ -19,7 +19,18 @@ func TestUsageReconciler_Reconcile(t *testing.T) {
 	instanceStatus := []byte(`{"phase": "stopped", "conditions": {"deployed": false, "pullingImages": false, "serviceExists": false}}`)
 	startOfMay := time.Date(2022, 05, 1, 0, 00, 00, 00, time.UTC)
 	startOfJune := time.Date(2022, 06, 1, 0, 00, 00, 00, time.UTC)
-	workspace := dbtest.NewWorkspace(t, "gitpodio-gitpod-gyjr82jkfnd")
+	teamID := uuid.New()
+	userID := uuid.New()
+	membership := db.TeamMembership{
+		ID:     uuid.New(),
+		TeamID: teamID,
+		UserID: userID,
+		Role:   db.TeamMembershipRole_Member,
+	}
+	workspace := dbtest.NewWorkspace(t, db.Workspace{
+		ID:      "gitpodio-gitpod-gyjr82jkfnd",
+		OwnerID: userID,
+	})
 	instances := []db.WorkspaceInstance{
 		{
 			ID:           uuid.New(),
@@ -43,6 +54,9 @@ func TestUsageReconciler_Reconcile(t *testing.T) {
 	tx = conn.Create(&workspace)
 	require.NoError(t, tx.Error)
 
+	tx = conn.Create(&membership)
+	require.NoError(t, tx.Error)
+
 	reconciler := NewUsageReconciler(conn)
 
 	status, err := reconciler.ReconcileTimeRange(context.Background(), startOfMay, startOfJune)
@@ -53,5 +67,6 @@ func TestUsageReconciler_Reconcile(t *testing.T) {
 		WorkspaceInstances:        1,
 		InvalidWorkspaceInstances: 1,
 		Workspaces:                1,
+		Teams:                     1,
 	}, status)
 }

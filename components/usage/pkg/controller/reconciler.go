@@ -41,6 +41,8 @@ type UsageReconcileStatus struct {
 	InvalidWorkspaceInstances int
 
 	Workspaces int
+
+	Teams int
 }
 
 func (u *UsageReconciler) Reconcile() error {
@@ -82,6 +84,22 @@ func (u *UsageReconciler) ReconcileTimeRange(ctx context.Context, from, to time.
 	}
 	status.Workspaces = len(workspaces)
 
+	// match workspaces to teams
+	teams, err := u.loadTeamsForWorkspaces(ctx, workspaces)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load teams for workspaces: %w", err)
+	}
+	status.Teams = len(teams)
+
+	return status, nil
+}
+
+type teamWithWorkspaces struct {
+	TeamID     uuid.UUID
+	Workspaces []workspaceWithInstances
+}
+
+func (u *UsageReconciler) loadTeamsForWorkspaces(ctx context.Context, workspaces []workspaceWithInstances) ([]teamWithWorkspaces, error) {
 	// find owners of these workspaces
 	var ownerIDs []uuid.UUID
 	for _, workspace := range workspaces {
@@ -98,21 +116,27 @@ func (u *UsageReconciler) ReconcileTimeRange(ctx context.Context, from, to time.
 		membershipsByUserID[membership.UserID] = membership
 	}
 
-	workspacesByOwnerID := map[uuid.UUID]workspaceWithInstances{}
+	workspacesByOwnerID := map[uuid.UUID][]workspaceWithInstances{}
 	for _, workspace := range workspaces {
-		workspacesByOwnerID[workspace.Workspace.OwnerID] = workspace
+		items, ok := workspacesByOwnerID[workspace.Workspace.OwnerID]
+		if !ok {
+			workspacesByOwnerID[workspace.Workspace.OwnerID] = []workspaceWithInstances{workspace}
+			continue
+		}
+
+		items = append(items, workspace)
 	}
 
-	for workspaceID, workspace := range workspaces {
+	var teamsWithWorkspaces []teamWithWorkspaces
+	for userID, membership := range membershipsByUserID {
 
+		teamsWithWorkspaces = append(teamsWithWorkspaces, teamWithWorkspaces{
+			TeamID:     membership.TeamID,
+			Workspaces: workspacesByOwnerID[userID],
+		})
 	}
 
-	return status, nil
-}
-
-type teamWithWorkspaces struct {
-	Team      db.Team
-	Workspace []workspaceWithInstances
+	return teamsWithWorkspaces, nil
 }
 
 type workspaceWithInstances struct {
